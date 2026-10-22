@@ -1,8 +1,8 @@
 # Data
-
+/data/*
 
 # MacOs
-
+.DS_Store
 
 # History files
 .Rhistory
