@@ -65,3 +65,16 @@ chronic_risk_table = filter(
 risk_table = acute_risk_table |>
   full_join(chronic_risk_table, by = c("id", "year", "latitude", "longitude"))
 
+# defining acute table which will be used for the map,
+# to label different status based on MAC-EQS threshold (14 µg/L).
+acute_map = mutate(risk_table,
+                   status = case_when(is.na(max_result) ~ "No Data",
+                                      max_result <= 14 ~ "Below EQS",
+                                      .default = "Above EQS"))
+
+# defining chronic table which will be used for the map,
+# to label different status based on AA-EQS threshold (1.2 µg/L).
+chronic_map = mutate(risk_table,
+                     status = case_when(is.na(avg_result) ~ "No Data", 
+                                        avg_result <= 1.2 ~ "Below EQS", 
+                                        .default = "Above EQS"))
