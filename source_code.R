@@ -1,20 +1,22 @@
-# extended comments and explanations are on the Quarto document.
+# Extended comments and explanations are on the Quarto document.
 
-# loading tidyverse packages for data manipulation, visualization, and parsing
+# Loading tidyverse packages for data manipulation, visualization, and parsing.
 library(dplyr)
 library(ggplot2)
 library(readr)
 library(lubridate)
 
-# loading raw Environment Agency water quality datasets (2023 - 2025)
+# Loading raw Environment Agency water quality datasets (2023 - 2025).
 water_quality_2023 = read_csv("data/WaterQuality23.csv")
 water_quality_2024 = read_csv("data/WaterQuality24.csv")
 water_quality_2025 = read_csv("data/WaterQuality25.csv")
 
-# unifying tables so filters can manage all tables, avoiding errors.
+# Unifying the three annual tables into one data frame so filters can be applied
+# once across all years, avoiding code repetition.
 tables = bind_rows(water_quality_2023,water_quality_2024,water_quality_2025)
 
-# extracting lead records in surface river waters across Tyne, Wear, and Tees.
+# Extracting dissolved and bioavailable lead records in running surface river waters
+# (in µg/L) across Northumberland & Tyne and Wear & Tees sub-areas.
 lead_table = filter(
   tables,
   (`determinand.prefLabel` == "Lead, Dissolved" | `determinand.prefLabel` == "Lead : BLM Bioavailable"),
@@ -23,7 +25,7 @@ lead_table = filter(
   sampleMaterialType == "RIVER / RUNNING SURFACE WATER",
   unit == "MICROGRAM PER LITRE")
 
-# selecting and renaming core spatial, temporal, and monitoring attributes.
+# Selecting and renaming core spatial, temporal, and monitoring attributes.
 lead_table = select(
   lead_table,
   id = `samplingPoint.notation`,
@@ -36,15 +38,16 @@ lead_table = select(
   material_type = sampleMaterialType,
   result)
 
-# parsing temporal features, converting numerical concentrations, flagging under limits ("<") samples.
+# Parsing dates and years, flagging samples below the limit of detection ("<"),
+# and converting text concentrations into numeric values.
 lead_table = mutate(
   lead_table,
   date = as_date(date),
   year = year(date),
-  under_limits = startsWith(result, "<"),
+  below_limit_detection = startsWith(result, "<"),
   result = parse_number(result))
 
-# acute risk: calculates annual maximum dissolved lead concentrations per site,
+# Acute risk: calculates annual maximum dissolved lead concentrations per site,
 # that will be compared to the MAC-EQS threshold (14 µg/L) to detect peak events.
 acute_risk_table = filter(
   lead_table,
@@ -52,7 +55,7 @@ acute_risk_table = filter(
   group_by(id, latitude, longitude, year) |>
   summarise(max_result = max(result, na.rm = TRUE), n_lead_dissolved = n(), .groups = "drop")
 
-# chronic risk: calculates annual mean bioavailable lead (BLM-adjusted) per site,
+# Chronic risk: calculates annual mean bioavailable lead (BLM-adjusted) per site,
 # that will be compared to the AA-EQS threshold (1.2 µg/L) to monitor long-term baseline exposure for aquatic life.
 chronic_risk_table = filter(
   lead_table,
@@ -60,21 +63,63 @@ chronic_risk_table = filter(
   group_by(id, latitude, longitude, year) |>
   summarise(avg_result = mean(result, na.rm = TRUE), n_lead_bioavailable = n(), .groups = "drop")
 
-# combining acute and chronic assessments through full_join to obtain all monitoring sites;
+# Combining acute and chronic assessments through full_join to obtain all monitoring sites;
 # this prevents data loss where stations monitor only dissolved lead or BLM bioavailability.
 risk_table = acute_risk_table |>
   full_join(chronic_risk_table, by = c("id", "year", "latitude", "longitude"))
 
-# defining acute table which will be used for the map,
-# to label different status based on MAC-EQS threshold (14 µg/L).
+# Defining risk status levels to fix categories and legend order for both maps,
+# even when a category is missing from the data.
+risk_status = c("No Data", "Below EQS", "Above EQS")
+
+# Defining acute table which will be used for the map,
+# to label different statuses based on MAC-EQS threshold (14 µg/L).
 acute_map = mutate(risk_table,
                    status = case_when(is.na(max_result) ~ "No Data",
                                       max_result <= 14 ~ "Below EQS",
-                                      .default = "Above EQS"))
+                                      .default = "Above EQS"),
+                   status = factor(status,
+                                   levels = risk_status))
 
-# defining chronic table which will be used for the map,
-# to label different status based on AA-EQS threshold (1.2 µg/L).
+# Defining chronic table which will be used for the map,
+# to label different statuses based on AA-EQS threshold (1.2 µg/L).
 chronic_map = mutate(risk_table,
                      status = case_when(is.na(avg_result) ~ "No Data", 
                                         avg_result <= 1.2 ~ "Below EQS", 
-                                        .default = "Above EQS"))
+                                        .default = "Above EQS"),
+                     status = factor(status,
+                                     levels = risk_status))
+
+# Plotting acute risk map.
+ggplot(data = acute_map, aes(x = longitude, y = latitude)) +
+  geom_point(aes(col = status, size = status), alpha = 0.7) +
+  facet_wrap(~ year) +
+  coord_quickmap() +
+  labs(title = "Classification of maximum dissolved lead (14 µg/L) per site.",
+       x = "Longitude",
+       y = "Latitude") +
+  scale_colour_manual(name = "MAC-EQS threshold", 
+                      values = c("No Data" = "#808080",
+                                 "Below EQS" = "#2C6FBB",
+                                 "Above EQS" = "#8E1B3A"), drop = FALSE) +
+  scale_size_manual(name = "MAC-EQS threshold", 
+                    values = c("No Data"   = 1.5,
+                               "Below EQS" = 1.5,
+                               "Above EQS" = 2.0), drop = FALSE)
+
+# Plotting chronic risk map.
+ggplot(data = chronic_map, aes(x = longitude, y = latitude)) +
+  geom_point(aes(col = status, size = status), alpha = 0.7) +
+  facet_wrap(~ year) +
+  coord_quickmap() +
+  labs(title = "Classification of mean bioavailable lead (1.2 µg/L) per site.",
+       x = "Longitude",
+       y = "Latitude") +
+  scale_colour_manual(name = "AA-EQS threshold", 
+                      values = c("No Data" = "#808080",
+                                 "Below EQS" = "#2C6FBB",
+                                 "Above EQS" = "#E07B00"), drop = FALSE) +
+  scale_size_manual(name = "AA-EQS threshold", 
+                    values = c("No Data"   = 1.5,
+                               "Below EQS" = 1.5,
+                               "Above EQS" = 2.0), drop = FALSE)
