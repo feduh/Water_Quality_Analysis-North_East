@@ -1,26 +1,27 @@
 ---
-title: "Water_Quality_Analysis"
+title: "Visual Exploration: how does the spatial and temporal distribution of river lead concentrations, evaluated against acute and chronic EQS thresholds, vary in the 'Northumberland & Tyne' and 'Wear & Tees' sub-areas between 2023 and 2025?"
+author: "Federica Gaglianone, SN: 260405733"
 format: html
 editor: visual
 ---
 
-## Quarto
+## Business Understanding
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+My stakeholder is the Water and Abandoned Metal Mines (WAMM) programme, which is trying to mitigate the lead traces going into the Tyne, Wear, and Tees rivers. It needs help to understand in which areas it should intervene, and how the site network changes between 2023 and 2025.
 
-## Running Code
+My research question is: "How does the spatial and temporal distribution of river lead concentrations, evaluated against acute and chronic EQS thresholds, vary in the 'Northumberland & Tyne' and 'Wear & Tees' sub-areas between 2023 and 2025?"
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+It is historically known that in the "Northumberland & Tyne" and "Wear & Tees" areas, lead comes from past mineral extraction activities. That is why I want to focus on this specific element and its spatial concentration across the rivers between 2023 and 2025. 
+(Source: Coal Authority, 2018 ["Water and abandoned metal mines projects in North Pennines progress well"](https://www.gov.uk/government/news/water-and-abandoned-metal-mines-projects-in-north-pennines-progress-well), GOV.UK).
 
-```{r}
-1 + 1
-```
+To determine if the annual maximum concentration and the annual mean concentration are respecting the acute and chronic EQS thresholds, the aim is to classify whether the measurements are below or above the EQS standards, which correspond to:
 
-You can add options to executable code like this
+Annual maximum concentration of dissolved lead (above EQS, acute risk: > 14 µg/L, below EQS: <= 14 µg/L). 
+(Source: MAC-EQS threshold, ["The Water Framework Directive (Standards and Classification) Directions (England and Wales) 2015"](https://www.legislation.gov.uk/uksi/2015/1623/pdfs/uksiod_20151623_en_auto.pdf), GOV.UK)
 
-```{r}
-#| echo: false
-2 * 2
-```
+Annual mean concentration of bioavailable lead (above EQS, chronic risk: > 1.2 µg/L, below EQS: <= 1.2 µg/L). 
+(Source: AA-EQS threshold, ["The Water Framework Directive (Standards and Classification) Directions (England and Wales) 2015"](https://www.legislation.gov.uk/uksi/2015/1623/pdfs/uksiod_20151623_en_auto.pdf), GOV.UK)
 
-The `echo: false` option disables the printing of code (only output is displayed).
+My analysis will be successful if it helps the WAMM programme understand in which areas it should intervene, and how the site network changes between 2023 and 2025.
+
+The limitations of my analysis are: not exploring the causes of lead presence; not trying to communicate the sampling sites, or measure the variations between the years, or display on the maps the exact values of lead concentrations (showing only whether a site is above or below the threshold). Also, the site network varies between the years.
