@@ -23,6 +23,7 @@ My analysis will be successful if it helps the WAMM programme understand in whic
 
 The limitations of my analysis are: not exploring the causes of lead presence; not trying to communicate the sampling sites, or measure the variations between the years, or display on the maps the exact values of lead concentrations (showing only whether a site is above or below the threshold). Also, the site network varies between the years.
 
+
 ## Data Understanding
 
 I am using the raw Environment Agency water quality datasets from 2023 to 2025 (`WaterQuality23.csv`, `WaterQuality24.csv`, and `WaterQuality25.csv`), downloaded on 22 October 2026 from the Defra and Environment Agency Water Quality Archive under the Open Government Licence v3.0. (Source: Defra & Environment Agency, ["Water Quality Archive"](https://environment.data.gov.uk/water-quality/view/landing)).
@@ -68,13 +69,19 @@ The datasets contain specific site measurements of various chemical and physical
 
 The main variables I need for my analysis are:
 
-- samplingPoint.notation: the unique identifier of each monitoring site.
-- samplingPoint.longitude and samplingPoint.latitude: the geographic coordinates of the site, needed to plot the points on the maps.
-- samplingPoint.subArea: the sub-area where the site is located, which allows me to select "NORTHUMBERLAND & TYNE" and "WEAR & TEES".
-- samplingPoint.samplingPointType and sampleMaterialType: the water body and sample material, which allow me to select only running surface river water ("FRESHWATER - RIVERS" and "RIVER / RUNNING SURFACE WATER").
-- phenomenonTime: the date and time when the sample was collected, needed to divide the data by year.
-- determinand.prefLabel: the determinand measured, which allows me to select "Lead, Dissolved" (for acute risk) and "Lead : BLM Bioavailable" (for chronic risk).
-- result and unit: the measured value and its unit of measurement ("MICROGRAM PER LITRE"). Some values in result start with "\<", which indicates that the concentration is below the limit of detection.
+**samplingPoint.notation**: the unique identifier of each monitoring site.
+
+**samplingPoint.longitude and samplingPoint.latitude**: the geographic coordinates of the site, needed to plot the points on the maps.
+
+**samplingPoint.subArea**: the sub-area where the site is located, which allows me to select "NORTHUMBERLAND & TYNE" and "WEAR & TEES".
+
+**samplingPoint.samplingPointType and sampleMaterialType**: the water body and sample material, which allow me to select only running surface river water ("FRESHWATER - RIVERS" and "RIVER / RUNNING SURFACE WATER").
+
+**phenomenonTime**: the date and time when the sample was collected, needed to divide the data by year.
+
+**determinand.prefLabel**: the determinand measured, which allows me to select "Lead, Dissolved" (for acute risk) and "Lead : BLM Bioavailable" (for chronic risk).
+
+**result and unit**: the measured value and its unit of measurement ("MICROGRAM PER LITRE"). Some values in result start with "\<", which indicates that the concentration is below the limit of detection.
 
 To verify how lead measurements are distributed across all regional sub-areas in the raw dataset before applying my river filters, I summarized the total lead records by sub-area (@tbl-raw-subareas):
 
@@ -108,8 +115,7 @@ unknown_diss_stats = tables |>
 
 ```{r}
 #| include: false
-# Building lead_table here (same code as the R script) so that the data quality
-# checks below can use it. It is shown and explained in Data Preparation.
+#| label: create-lead-table
 
 lead_table = filter(
   tables,
@@ -125,10 +131,8 @@ lead_table = select(
   longitude = `samplingPoint.longitude`,
   latitude = `samplingPoint.latitude`,
   sub_area = `samplingPoint.subArea`,
-  point_type = `samplingPoint.samplingPointType`,
   date = `phenomenonTime`,
   lead_type = `determinand.prefLabel`,
-  material_type = sampleMaterialType,
   result)
 
 lead_table = mutate(
@@ -141,9 +145,9 @@ lead_table = mutate(
 
 As shown in @tbl-raw-subareas, the vast majority of all lead measurements in the North East region are concentrated in "NORTHUMBERLAND & TYNE" and "WEAR & TEES". Exploring this distribution also highlights my four main data quality issues and characteristics:
 
-Excluded unlabelled sites ("UNKNOWN-NORTH EAST AREA"): In the raw dataset, there are `r unknown_diss_stats$unknown_measurements` measurements of "Lead, Dissolved" across `r unknown_diss_stats$unknown_sites` sites recorded under "UNKNOWN-NORTH EAST AREA". Because these sites are not assigned to a specific sub-area in the official variable, I excluded them from the analysis by filtering only "NORTHUMBERLAND & TYNE" and "WEAR & TEES". However, these unlabelled sites could still be physically located inside the North East river network, potentially near historical mines: if any of them exceed the EQS threshold, my maps will miss those exceedances without showing them.
+**Excluded unlabelled sites ("UNKNOWN-NORTH EAST AREA")**: In the raw dataset, there are `r unknown_diss_stats$unknown_measurements` measurements of "Lead, Dissolved" across `r unknown_diss_stats$unknown_sites` sites recorded under "UNKNOWN-NORTH EAST AREA". Because these sites are not assigned to a specific sub-area in the official variable, I excluded them from the analysis by filtering only "NORTHUMBERLAND & TYNE" and "WEAR & TEES". However, these unlabelled sites could still be physically located inside the North East river network, potentially near historical mines: if any of them exceed the EQS threshold, my maps will miss those exceedances without showing them.
 
-The monitoring site network changes across the years: As demonstrated quantitatively in @tbl-lead-counts, the number of sampled sites drops sharply between 2023 and 2024. When the monitoring network shrinks in this way, a visual reduction of "Above EQS" dots on the map can be caused by missing stations rather than by an actual reduction of lead in the rivers.
+**The monitoring site network changes across the years**: As demonstrated quantitatively in @tbl-lead-counts, the number of sampled sites drops sharply between 2023 and 2024. When the monitoring network shrinks in this way, a visual reduction of "Above EQS" dots on the map can be caused by missing stations rather than by an actual reduction of lead in the rivers.
 
 ```{r}
 #| label: tbl-lead-counts
@@ -157,7 +161,7 @@ lead_table |>
     .groups = "drop")
 ```
 
-Sites measuring only one form of lead: Many more stations measure "Lead, Dissolved" than "Lead : BLM Bioavailable". Because of this, I must join the acute and chronic tables with a full_join() to avoid losing stations, and display a "No Data" category on the maps when one of the two measurements is missing.
+**Sites measuring only one form of lead**: Many more stations measure "Lead, Dissolved" than "Lead : BLM Bioavailable". Because of this, I must join the acute and chronic tables with a full_join() to avoid losing stations, and display a "No Data" category on the maps when one of the two measurements is missing.
 
 ```{r}
 #| label: tbl-below-lod
@@ -174,3 +178,28 @@ below_lod_summary
 ```
 
 Furthermore, @tbl-below-lod proves that when `parse_number()` removes the `"<"` symbol, it slightly overestimates the true concentration (converting `"<2"` into `2` and `"<0.1"` into `0.1`). However, this never affects my classification: there are `r below_lod_summary |> filter(lead_type == "Lead, Dissolved", below_limit_detection) |> pull(measurements)` values with `"<"` in dissolved lead, but their maximum value is `r below_lod_summary |> filter(lead_type == "Lead, Dissolved", below_limit_detection) |> pull(max_parsed_value)` µg/L, which is well below the acute threshold of 14 µg/L. At the same time, for bioavailable lead there are no measurements below the detection limit, meaning that the chronic risk assessment is completely unaffected by this limitation.
+
+
+## Data Preparation
+
+To prepare the data for the maps, I filtered and cleaned the unified `tables` dataset to keep only the information I wanted to include in my project.
+
+```{r}
+#| ref.label: "create-lead-table"
+#| eval: false
+#| echo: true
+```
+
+**Two types of lead**: Initially I thought about including only one type of lead, the dissolved one ("Lead, Dissolved"), because it is a difficult element to dispose of and it negatively impacts freshwater aquatic organisms. Dissolved lead allows me to compare the maximum concentration recorded during the year at each site against the acute EQS threshold (MAC-EQS, 14 µg/L), which is the maximum concentration allowed at any time. However, I thought it made no sense to look only at the acute peak values without trying to have an overall view of the bioavailable lead ("Lead : BLM Bioavailable") as well. Bioavailable lead allows me to compare the annual mean per site against the chronic threshold (AA-EQS, 1.2 µg/L) to see if there has been a prolonged exposure to the element, even in smaller quantities.   
+
+**Two sub-areas**: From the historical context mentioned in the Business Understanding (Coal Authority, 2018), past mines containing lead were especially concentrated in the "NORTHUMBERLAND & TYNE" and "WEAR & TEES" areas. I had doubts along the process about whether to keep only one sub-area or both. In the end, I decided that I had to keep both of them because analysing only one would have left out an important part of the territory affected by the mines where the WAMM programme operates. At the same time, I deliberately decided to exclude "UNKNOWN-NORTH EAST AREA" because, as explained in the Data Understanding, those sites are not assigned to any specific sub-area.
+
+**Why only freshwater and rivers**: I wanted to keep my data selection focused on "FRESHWATER - RIVERS" and running surface water ("RIVER / RUNNING SURFACE WATER") for two reasons. First, because the WAMM programme acts specifically on inland rivers polluted by abandoned mines. Second, because in the 2015 EQS Directions table there are two different chronic thresholds for lead: 1.2 µg/L for "inland surface waters" (like rivers) and 1.3 µg/L for "other surface waters". Since I used the 1.2 µg/L threshold, I had to keep only inland river waters so that the comparison with the threshold is correct.
+
+**Why only measurements in µg/L**: I selected only "MICROGRAM PER LITRE" because it is the exact same unit of measurement used by the EQS thresholds (14 µg/L and 1.2 µg/L), and also for convenience, because in this way I do not have to do any conversion.
+
+**Selecting and renaming columns**: With select(), I kept only the 7 columns that I actually needed for my analysis and renamed them with shorter and simpler names (id, longitude, latitude, sub_area, date, lead_type and result) so that they are much easier to read and type in the rest of the code.
+
+**Why year**: After transforming date into a proper date format with as_date(), I extracted the year first of all because I wanted to group the data to calculate the annual values for the two thresholds (the annual maximum for acute risk and the annual mean for chronic risk), and also because keeping all three years (2023, 2024, and 2025) helps to easily spot changes over time through the faceted maps.
+
+**Flagging < values and parse_number()**: Before converting result into numbers with parse_number(), I created the below_limit_detection column using startsWith(result, "<"). I had to do this before parse_number() because once the "<" symbol is removed, it is no longer possible to distinguish a value actually measured from one below the detection limit. To convert the text into numbers, I considered different alternatives: removing the "<" rows, replacing them with zero, or replacing them with half of the limit (like 1 or 0.05). As shown in @tbl-below-lod, in my data the "<" values ("<2" and "<0.1") are present only in dissolved lead, on which I calculate the annual maximum, while bioavailable lead (on which I calculate the mean) has none. If I had removed the "<" rows, the sites that only had measurements below the limit in a year would have completely disappeared from the acute map (losing the cleanest sites), while for the sites that also had higher measured values, the annual maximum would not have changed at all. On the other hand, using zero or half of the limit would have introduced made-up numbers that are not in the dataset. That is why I chose parse_number(), which keeps 2 and 0.1 as the maximum possible value for those samples without losing any site and without changing the EQS classification, since both values are way below 14 µg/L.
