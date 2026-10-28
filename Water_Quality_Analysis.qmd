@@ -69,19 +69,19 @@ The datasets contain specific site measurements of various chemical and physical
 
 The main variables I need for my analysis are:
 
-**samplingPoint.notation**: the unique identifier of each monitoring site.
+- **samplingPoint.notation**: the unique identifier of each monitoring site.
 
-**samplingPoint.longitude and samplingPoint.latitude**: the geographic coordinates of the site, needed to plot the points on the maps.
+- **samplingPoint.longitude and samplingPoint.latitude**: the geographic coordinates of the site, needed to plot the points on the maps.
 
-**samplingPoint.subArea**: the sub-area where the site is located, which allows me to select "NORTHUMBERLAND & TYNE" and "WEAR & TEES".
+- **samplingPoint.subArea**: the sub-area where the site is located, which allows me to select "NORTHUMBERLAND & TYNE" and "WEAR & TEES".
 
-**samplingPoint.samplingPointType and sampleMaterialType**: the water body and sample material, which allow me to select only running surface river water ("FRESHWATER - RIVERS" and "RIVER / RUNNING SURFACE WATER").
+- **samplingPoint.samplingPointType and sampleMaterialType**: the water body and sample material, which allow me to select only running surface river water ("FRESHWATER - RIVERS" and "RIVER / RUNNING SURFACE WATER").
 
-**phenomenonTime**: the date and time when the sample was collected, needed to divide the data by year.
+- **phenomenonTime**: the date and time when the sample was collected, needed to divide the data by year.
 
-**determinand.prefLabel**: the determinand measured, which allows me to select "Lead, Dissolved" (for acute risk) and "Lead : BLM Bioavailable" (for chronic risk).
+- **determinand.prefLabel**: the determinand measured, which allows me to select "Lead, Dissolved" (for acute risk) and "Lead : BLM Bioavailable" (for chronic risk).
 
-**result and unit**: the measured value and its unit of measurement ("MICROGRAM PER LITRE"). Some values in result start with "\<", which indicates that the concentration is below the limit of detection.
+- **result and unit**: the measured value and its unit of measurement ("MICROGRAM PER LITRE"). Some values in result start with "\<", which indicates that the concentration is below the limit of detection.
 
 To verify how lead measurements are distributed across all regional sub-areas in the raw dataset before applying my river filters, I summarized the total lead records by sub-area (@tbl-raw-subareas):
 
@@ -145,9 +145,9 @@ lead_table = mutate(
 
 As shown in @tbl-raw-subareas, the vast majority of all lead measurements in the North East region are concentrated in "NORTHUMBERLAND & TYNE" and "WEAR & TEES". Exploring this distribution also highlights my four main data quality issues and characteristics:
 
-**Excluded unlabelled sites ("UNKNOWN-NORTH EAST AREA")**: In the raw dataset, there are `r unknown_diss_stats$unknown_measurements` measurements of "Lead, Dissolved" across `r unknown_diss_stats$unknown_sites` sites recorded under "UNKNOWN-NORTH EAST AREA". Because these sites are not assigned to a specific sub-area in the official variable, I excluded them from the analysis by filtering only "NORTHUMBERLAND & TYNE" and "WEAR & TEES". However, these unlabelled sites could still be physically located inside the North East river network, potentially near historical mines: if any of them exceed the EQS threshold, my maps will miss those exceedances without showing them.
+- **Excluded unlabelled sites ("UNKNOWN-NORTH EAST AREA")**: In the raw dataset, there are `r unknown_diss_stats$unknown_measurements` measurements of "Lead, Dissolved" across `r unknown_diss_stats$unknown_sites` sites recorded under "UNKNOWN-NORTH EAST AREA". Because these sites are not assigned to a specific sub-area in the official variable, I excluded them from the analysis by filtering only "NORTHUMBERLAND & TYNE" and "WEAR & TEES". However, these unlabelled sites could still be physically located inside the North East river network, potentially near historical mines: if any of them exceed the EQS threshold, my maps will miss those exceedances without showing them.
 
-**The monitoring site network changes across the years**: As demonstrated quantitatively in @tbl-lead-counts, the number of sampled sites drops sharply between 2023 and 2024. When the monitoring network shrinks in this way, a visual reduction of "Above EQS" dots on the map can be caused by missing stations rather than by an actual reduction of lead in the rivers.
+- **The monitoring site network changes across the years**: As demonstrated quantitatively in @tbl-lead-counts, the number of sampled sites drops sharply between 2023 and 2024. When the monitoring network shrinks in this way, a visual reduction of "Above EQS" dots on the map can be caused by missing stations rather than by an actual reduction of lead in the rivers.
 
 ```{r}
 #| label: tbl-lead-counts
@@ -161,7 +161,7 @@ lead_table |>
     .groups = "drop")
 ```
 
-**Sites measuring only one form of lead**: Many more stations measure "Lead, Dissolved" than "Lead : BLM Bioavailable". Because of this, I must join the acute and chronic tables with a full_join() to avoid losing stations, and display a "No Data" category on the maps when one of the two measurements is missing.
+- **Sites measuring only one form of lead**: Many more stations measure "Lead, Dissolved" than "Lead : BLM Bioavailable". Because of this, I must join the acute and chronic tables with a full_join() to avoid losing stations, and display a "No Data" category on the maps when one of the two measurements is missing.
 
 ```{r}
 #| label: tbl-below-lod
@@ -190,16 +190,206 @@ To prepare the data for the maps, I filtered and cleaned the unified `tables` da
 #| echo: true
 ```
 
-**Two types of lead**: Initially I thought about including only one type of lead, the dissolved one ("Lead, Dissolved"), because it is a difficult element to dispose of and it negatively impacts freshwater aquatic organisms. Dissolved lead allows me to compare the maximum concentration recorded during the year at each site against the acute EQS threshold (MAC-EQS, 14 µg/L), which is the maximum concentration allowed at any time. However, I thought it made no sense to look only at the acute peak values without trying to have an overall view of the bioavailable lead ("Lead : BLM Bioavailable") as well. Bioavailable lead allows me to compare the annual mean per site against the chronic threshold (AA-EQS, 1.2 µg/L) to see if there has been a prolonged exposure to the element, even in smaller quantities.   
+- **Two types of lead**: Initially I thought about including only one type of lead, the dissolved one ("Lead, Dissolved"), because it is a difficult element to dispose of and it negatively impacts freshwater aquatic organisms. Dissolved lead allows me to compare the maximum concentration recorded during the year at each site against the acute EQS threshold (MAC-EQS, 14 µg/L), which is the maximum concentration allowed at any time. However, I thought it made no sense to look only at the acute peak values without trying to have an overall view of the bioavailable lead ("Lead : BLM Bioavailable") as well. Bioavailable lead allows me to compare the annual mean per site against the chronic threshold (AA-EQS, 1.2 µg/L) to see if there has been a prolonged exposure to the element, even in smaller quantities.   
 
-**Two sub-areas**: From the historical context mentioned in the Business Understanding (Coal Authority, 2018), past mines containing lead were especially concentrated in the "NORTHUMBERLAND & TYNE" and "WEAR & TEES" areas. I had doubts along the process about whether to keep only one sub-area or both. In the end, I decided that I had to keep both of them because analysing only one would have left out an important part of the territory affected by the mines where the WAMM programme operates. At the same time, I deliberately decided to exclude "UNKNOWN-NORTH EAST AREA" because, as explained in the Data Understanding, those sites are not assigned to any specific sub-area.
+- **Two sub-areas**: From the historical context mentioned in the Business Understanding (Coal Authority, 2018), past mines containing lead were especially concentrated in the "NORTHUMBERLAND & TYNE" and "WEAR & TEES" areas. I had doubts along the process about whether to keep only one sub-area or both. In the end, I decided that I had to keep both of them because analysing only one would have left out an important part of the territory affected by the mines where the WAMM programme operates. At the same time, I deliberately decided to exclude "UNKNOWN-NORTH EAST AREA" because, as explained in the Data Understanding, those sites are not assigned to any specific sub-area.
 
-**Why only freshwater and rivers**: I wanted to keep my data selection focused on "FRESHWATER - RIVERS" and running surface water ("RIVER / RUNNING SURFACE WATER") for two reasons. First, because the WAMM programme acts specifically on inland rivers polluted by abandoned mines. Second, because in the 2015 EQS Directions table there are two different chronic thresholds for lead: 1.2 µg/L for "inland surface waters" (like rivers) and 1.3 µg/L for "other surface waters". Since I used the 1.2 µg/L threshold, I had to keep only inland river waters so that the comparison with the threshold is correct.
+- **Why only freshwater and rivers**: I wanted to keep my data selection focused on "FRESHWATER - RIVERS" and running surface water ("RIVER / RUNNING SURFACE WATER") for two reasons. First, because the WAMM programme acts specifically on inland rivers polluted by abandoned mines. Second, because in the 2015 EQS Directions table there are two different chronic thresholds for lead: 1.2 µg/L for "inland surface waters" (like rivers) and 1.3 µg/L for "other surface waters". Since I used the 1.2 µg/L threshold, I had to keep only inland river waters so that the comparison with the threshold is correct.
 
-**Why only measurements in µg/L**: I selected only "MICROGRAM PER LITRE" because it is the exact same unit of measurement used by the EQS thresholds (14 µg/L and 1.2 µg/L), and also for convenience, because in this way I do not have to do any conversion.
+- **Why only measurements in µg/L**: I selected only "MICROGRAM PER LITRE" because it is the exact same unit of measurement used by the EQS thresholds (14 µg/L and 1.2 µg/L), and also for convenience, because in this way I do not have to do any conversion.
 
-**Selecting and renaming columns**: With select(), I kept only the 7 columns that I actually needed for my analysis and renamed them with shorter and simpler names (id, longitude, latitude, sub_area, date, lead_type and result) so that they are much easier to read and type in the rest of the code.
+- **Selecting and renaming columns**: With select(), I kept only the 7 columns that I actually needed for my analysis and renamed them with shorter and simpler names (id, longitude, latitude, sub_area, date, lead_type and result) so that they are much easier to read and type in the rest of the code.
 
-**Why year**: After transforming date into a proper date format with as_date(), I extracted the year first of all because I wanted to group the data to calculate the annual values for the two thresholds (the annual maximum for acute risk and the annual mean for chronic risk), and also because keeping all three years (2023, 2024, and 2025) helps to easily spot changes over time through the faceted maps.
+- **Why year**: After transforming date into a proper date format with as_date(), I extracted the year first of all because I wanted to group the data to calculate the annual values for the two thresholds (the annual maximum for acute risk and the annual mean for chronic risk), and also because keeping all three years (2023, 2024, and 2025) helps to easily spot changes over time through the faceted maps.
 
-**Flagging < values and parse_number()**: Before converting result into numbers with parse_number(), I created the below_limit_detection column using startsWith(result, "<"). I had to do this before parse_number() because once the "<" symbol is removed, it is no longer possible to distinguish a value actually measured from one below the detection limit. To convert the text into numbers, I considered different alternatives: removing the "<" rows, replacing them with zero, or replacing them with half of the limit (like 1 or 0.05). As shown in @tbl-below-lod, in my data the "<" values ("<2" and "<0.1") are present only in dissolved lead, on which I calculate the annual maximum, while bioavailable lead (on which I calculate the mean) has none. If I had removed the "<" rows, the sites that only had measurements below the limit in a year would have completely disappeared from the acute map (losing the cleanest sites), while for the sites that also had higher measured values, the annual maximum would not have changed at all. On the other hand, using zero or half of the limit would have introduced made-up numbers that are not in the dataset. That is why I chose parse_number(), which keeps 2 and 0.1 as the maximum possible value for those samples without losing any site and without changing the EQS classification, since both values are way below 14 µg/L.
+- **Flagging < values and parse_number()**: Before converting result into numbers with parse_number(), I created the below_limit_detection column using startsWith(result, "<"). I had to do this before parse_number() because once the "<" symbol is removed, it is no longer possible to distinguish a value actually measured from one below the detection limit. To convert the text into numbers, I considered different alternatives: removing the "<" rows, replacing them with zero, or replacing them with half of the limit (like 1 or 0.05). As shown in @tbl-below-lod, in my data the "<" values ("<2" and "<0.1") are present only in dissolved lead, on which I calculate the annual maximum, while bioavailable lead (on which I calculate the mean) has none. If I had removed the "<" rows, the sites that only had measurements below the limit in a year would have completely disappeared from the acute map (losing the cleanest sites), while for the sites that also had higher measured values, the annual maximum would not have changed at all. On the other hand, using zero or half of the limit would have introduced made-up numbers that are not in the dataset. That is why I chose parse_number(), which keeps 2 and 0.1 as the maximum possible value for those samples without losing any site and without changing the EQS classification, since both values are way below 14 µg/L.
+
+
+## Modelling and Analysis
+
+To answer my research question on the spatial and temporal distribution of river lead concentrations, I divided this phase into four steps: calculating the annual risk values per site, joining the two tables, checking the assumptions of my method, and classifying the sites to plot the maps.
+
+
+#### Calculating Annual Acute and Chronic Risk
+
+Starting from `lead_table`, I created two separate tables by grouping the data by site (`id`, `latitude`, `longitude`) and `year`:
+
+- For `acute_risk_table`, I filtered only `"Lead, Dissolved"` and calculated the annual maximum (`max_result = max(result, na.rm = TRUE)`) to compare it with the 14 µg/L MAC-EQS threshold.
+- For `chronic_risk_table`, I filtered `"Lead : BLM Bioavailable"` and calculated the annual mean (`avg_result = mean(result, na.rm = TRUE)`) to compare it with the 1.2 µg/L AA-EQS threshold.
+
+```{r}
+# Acute risk: calculates annual maximum dissolved lead concentrations per site,
+# that will be compared to the MAC-EQS threshold (14 µg/L) to detect peak events.
+acute_risk_table = filter(
+  lead_table,
+  lead_type == "Lead, Dissolved") |>
+  group_by(id, latitude, longitude, year) |>
+  summarise(max_result = max(result, na.rm = TRUE), n_lead_dissolved = n(), .groups = "drop")
+
+# Chronic risk: calculates annual mean bioavailable lead (BLM-adjusted) per site,
+# compared to the AA-EQS threshold (1.2 µg/L) to monitor long-term exposure.
+chronic_risk_table = filter(
+  lead_table,
+  lead_type == "Lead : BLM Bioavailable") |>
+  group_by(id, latitude, longitude, year) |>
+  summarise(avg_result = mean(result, na.rm = TRUE), n_lead_bioavailable = n(), .groups = "drop")
+```
+
+
+#### Joining the Two Tables and Checking Methodological Assumptions
+
+I combined `acute_risk_table` and `chronic_risk_table` into `risk_table` using a `full_join()`. I chose `full_join()` instead of `inner_join()` because, as seen in @tbl-lead-counts, many more sites measure dissolved lead than bioavailable lead, and as confirmed by @fig-acute-map (where zero sites are `"No Data"`), every station that measures bioavailable lead also measures dissolved lead, while many stations measure only dissolved lead. Using `full_join()` prevents losing these dissolved-only stations and allows me to label their missing bioavailable measurements as `"No Data"` in the chronic map.
+
+```{r}
+# Combining acute and chronic assessments through full_join to keep all sites;
+# this prevents data loss where stations monitor only dissolved lead.
+risk_table = acute_risk_table |>
+  full_join(chronic_risk_table, by = c("id", "year", "latitude", "longitude"))
+```
+
+This method relies on three main assumptions, which I checked directly on the data (@tbl-assumptions-check):
+
+```{r}
+#| label: tbl-assumptions-check
+#| tbl-cap: "Verification of methodological assumptions: coordinate stability per site and annual sample counts per site-year."
+
+# Checking if any site ID has more than 1 pair of coordinates across the dataset.
+coord_check = lead_table |>
+  group_by(id) |>
+  summarise(
+    distinct_lon = n_distinct(longitude),
+    distinct_lat = n_distinct(latitude),
+    .groups = "drop"
+  )
+
+# Summarising sample counts per site-year and coordinate stability.
+assumptions_summary = tibble(
+  lead_form = c("Lead, Dissolved (acute)", "Lead : BLM Bioavailable (chronic)"),
+  min_samples = c(min(acute_risk_table$n_lead_dissolved), min(chronic_risk_table$n_lead_bioavailable)),
+  max_samples = c(max(acute_risk_table$n_lead_dissolved), max(chronic_risk_table$n_lead_bioavailable)),
+  single_sample_site_years = c(sum(acute_risk_table$n_lead_dissolved == 1), sum(chronic_risk_table$n_lead_bioavailable == 1)),
+  max_coords_per_id = max(coord_check$distinct_lon, coord_check$distinct_lat)
+)
+
+assumptions_summary
+```
+
+- **Different number of samples per site:** In the code above, I calculated `n_lead_dissolved` and `n_lead_bioavailable` because not all sites are sampled the same number of times during a year. As shown in @tbl-assumptions-check, annual samples per site range from `r min(acute_risk_table$n_lead_dissolved)` to `r max(acute_risk_table$n_lead_dissolved)` for dissolved lead (with `r sum(acute_risk_table$n_lead_dissolved == 1)` site-years sampled only once) and from `r min(chronic_risk_table$n_lead_bioavailable)` to `r max(chronic_risk_table$n_lead_bioavailable)` for bioavailable lead. For the annual maximum, a site sampled many times in a year has more chances of recording a high peak than a site sampled only once.
+
+- **Reliability of the annual mean:** The AA-EQS threshold is designed for an annual average based on regular sampling across the year. Because @tbl-assumptions-check shows that `r sum(chronic_risk_table$n_lead_bioavailable == 1)` bioavailable site-years are based on a single sample, their annual mean (`avg_result`) is less reliable than at sites sampled every month.
+
+- **Fixed site coordinates:** By grouping the data by `id`, `latitude`, and `longitude`, I assume that the coordinates of each station never change over time. If a station had slightly different coordinates recorded in different samples, `group_by()` would split the same site into two separate rows. Checking `lead_table` in @tbl-assumptions-check confirms that the maximum number of distinct longitudes or latitudes per `id` is `r max(coord_check$distinct_lon, coord_check$distinct_lat)`, `r ifelse(max(coord_check$distinct_lon, coord_check$distinct_lat) == 1, "so this assumption holds completely", "meaning some sites change coordinates")`.
+
+
+#### Classifying the Sites and Visualising Risk on the Maps
+
+Finally, I classified the sites into risk categories and prepared the geographic boundaries and coordinate limits for the maps:
+
+```{r}
+# Defining risk status levels to fix categories and legend order for both maps,
+# even when a category is missing from the data.
+risk_status = c("No Data", "Below EQS", "Above EQS")
+
+# Defining acute table which will be used for the map,
+# to label different statuses based on MAC-EQS threshold (14 µg/L).
+acute_map = mutate(risk_table,
+                   status = case_when(is.na(max_result) ~ "No Data",
+                                      max_result <= 14 ~ "Below EQS",
+                                      .default = "Above EQS"),
+                   status = factor(status, levels = risk_status)) |>
+  arrange(status)
+
+# Defining chronic table which will be used for the map,
+# to label different statuses based on AA-EQS threshold (1.2 µg/L).
+chronic_map = mutate(risk_table,
+                     status = case_when(is.na(avg_result) ~ "No Data", 
+                                        avg_result <= 1.2 ~ "Below EQS", 
+                                        .default = "Above EQS"),
+                     status = factor(status, levels = risk_status)) |>
+  arrange(status)
+
+# Retrieving UK internal administrative boundaries (counties/unitary authorities)
+# as an sf object to provide local geographic context and coastline detail.
+uk_map = ne_states(country = "united kingdom", returnclass = "sf")
+
+# Computing coordinate ranges from monitoring sites to zoom on the study area.
+lon_limits = range(risk_table$longitude)
+lat_limits = range(risk_table$latitude)
+```
+
+In the code above, I created `acute_map` and `chronic_map` using `case_when()` to classify each site into `"No Data"`, `"Below EQS"`, or `"Above EQS"`. I converted `status` into a factor with fixed levels (`risk_status = c("No Data", "Below EQS", "Above EQS")`) so that the order in the legend stays the same in both maps, even when a category is missing from the data (like `"No Data"` in the acute map, where `r sum(acute_map$status == "No Data")` sites are `"No Data"`, so I used `drop = FALSE` and `show.legend = TRUE` to keep it visible in the legend). At the end, I used `arrange(status)` to order the rows by severity so that the `"Above EQS"` dots are drawn last on top of the others and are never hidden behind `"Below EQS"` points.
+
+To answer my research question, I used two maps (@fig-acute-map and @fig-chronic-map) because they directly show where the `"Above EQS"` sites are concentrated in space across the two sub-areas, while `facet_wrap(~ year)` divides each map into three panels to compare how the distribution changes between 2023, 2024, and 2025.
+
+I made the following visual choices to make the maps clear for the stakeholder:
+
+- **Base map and zoom:** I plotted the UK administrative boundaries with `geom_sf()` and used `coord_sf()` with the longitude and latitude ranges of the sites (`lon_limits` and `lat_limits`) to zoom in on the study area while keeping the real geographic proportions of the territory.
+
+- **Different colours for acute and chronic risk (dots and facet strips):** I used blue (`#2C6FBB`) for `"Below EQS"` and grey (`#808080`) for `"No Data"` in both maps, but I chose two different colours for `"Above EQS"`—burgundy (`#8E1B3A`) in @fig-acute-map and orange (`#E07B00`) in @fig-chronic-map—and matched the background colour of the facet strips (`#EC9CB2` for acute and `#FFCA8A` for chronic) to each palette, so the reader immediately distinguishes the two types of risk.
+
+- **Dot size and transparency:** I gave a larger size (`3.5`) to `"Above EQS"` dots compared to `"Below EQS"` (`2.5`) and `"No Data"` (`2.0`) so that high-risk stations stand out clearly, and I set `alpha = 0.7` to make overlapping points easier to distinguish when stations are close to each other.
+
+```{r}
+#| label: fig-acute-map
+#| fig-cap: "Spatial and temporal distribution of annual maximum dissolved lead per site compared against the acute MAC-EQS threshold (14 µg/L) between 2023 and 2025."
+#| fig-width: 10
+#| fig-height: 5
+#| out-width: 100%
+#| fig-align: center
+
+ggplot() +
+  geom_sf(data = uk_map, fill = "white", col = "#B0B0B0") +
+  geom_point(data = acute_map, 
+             aes(x = longitude, y = latitude, col = status, size = status), 
+             alpha = 0.7,
+             show.legend = TRUE) +
+  facet_wrap(~ year) +
+  coord_sf(xlim = lon_limits, ylim = lat_limits) +
+  labs(x = "Longitude",
+       y = "Latitude") +
+  scale_colour_manual(name = "MAC-EQS threshold", 
+                      values = c("No Data" = "#808080",
+                                 "Below EQS" = "#2C6FBB",
+                                 "Above EQS" = "#8E1B3A"), drop = FALSE) +
+  scale_size_manual(name = "MAC-EQS threshold", 
+                    values = c("No Data"   = 2.0,
+                               "Below EQS" = 2.5,
+                               "Above EQS" = 3.5), drop = FALSE) +
+  theme(
+    panel.background = element_rect(fill = "#D6EAF8"),
+    panel.border = element_rect(fill = NA, colour = "black"),
+    strip.background = element_rect(fill = "#EC9CB2", colour = "black"),
+    legend.key = element_blank())
+```
+
+```{r}
+#| label: fig-chronic-map
+#| fig-cap: "Spatial and temporal distribution of annual mean bioavailable lead per site compared against the chronic AA-EQS threshold (1.2 µg/L) between 2023 and 2025."
+#| fig-width: 10
+#| fig-height: 5
+#| out-width: 100%
+#| fig-align: center
+
+ggplot() +
+  geom_sf(data = uk_map, fill = "white", col = "#B0B0B0") +
+  geom_point(data = chronic_map, 
+             aes(x = longitude, y = latitude, col = status, size = status), 
+             alpha = 0.7) +
+  facet_wrap(~ year) +
+  coord_sf(xlim = lon_limits, ylim = lat_limits) +
+  labs(x = "Longitude",
+       y = "Latitude") +
+  scale_colour_manual(name = "AA-EQS threshold", 
+                      values = c("No Data" = "#808080",
+                                 "Below EQS" = "#2C6FBB",
+                                 "Above EQS" = "#E07B00"), drop = FALSE) +
+  scale_size_manual(name = "AA-EQS threshold", 
+                    values = c("No Data"   = 2.0,
+                               "Below EQS" = 2.5,
+                               "Above EQS" = 3.5), drop = FALSE) +
+  theme(
+    panel.background = element_rect(fill = "#D6EAF8"),
+    panel.border = element_rect(fill = NA, colour = "black"),
+    strip.background = element_rect(fill = "#FFCA8A", colour = "black"),
+    legend.key = element_blank())
+```
