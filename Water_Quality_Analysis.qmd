@@ -441,3 +441,25 @@ If I had more time to iterate on this project, I would take four steps to overco
 3. **Display the two sub-areas on the maps:** I would use the `sub_area` variable (for example with different point shapes or catchment polygons) to make the distinction between `"NORTHUMBERLAND & TYNE"` and `"WEAR & TEES"` directly visible on the maps.
 
 4. **Identify the specific top-exceedance stations for WAMM:** I would extract a table of the individual station `id`s that exceeded both the acute and chronic thresholds across multiple years, providing the WAMM programme with a concrete list of priority locations for field intervention.
+
+
+## Deployment
+
+
+#### Summary of the Analysis
+
+I analysed the measurements of dissolved and bioavailable lead in running river waters across the "Northumberland & Tyne" and "Wear & Tees" sub-areas, using the datasets published by the Environment Agency between 2023 and 2025, to check whether they exceeded the maximum thresholds allowed by the EQS standards. While monitoring stations are distributed across the whole study area, the sites exceeding the acute threshold (14 µg/L) as well as the sites exceeding the chronic threshold (1.2 µg/L) are strongly concentrated in the same zone, namely the south-west of "Northumberland & Tyne" and the western part of "Wear & Tees" (@fig-acute-map and @fig-chronic-map). Across the three years, the number of sites exceeding the thresholds appears to decrease year by year, which cannot be separated from the fact that over the same period the total number of sampled stations also drops sharply between 2023 and 2024 (@tbl-lead-counts), before new sites respecting the EQS thresholds are added across the region in 2025.
+
+
+#### Key Message for the Stakeholder
+
+The most important takeaway from these maps is that the visual reduction of threshold exceedances between 2023 and 2025 does not prove an environmental improvement, because the number of sampled stations changes strongly across the years (@tbl-lead-counts) and many stations in the high-risk area have no bioavailable lead measurements ("No Data", shown in grey). For this reason, the WAMM programme should closely check those "No Data" stations in the chronic risk map (@fig-chronic-map) inside the critical zone. From the maps alone, it is not possible to tell whether the sites exceeding the chronic threshold in 2023 stopped being monitored for bioavailable lead by the Environment Agency in 2024 and 2025, or whether those "No Data" stations are different sites that were not measured for bioavailable lead for other reasons; the same uncertainty applies to the acute map (@fig-acute-map), where it is not clear if high-risk stations were removed from the network or actually dropped below the threshold. However, on the positive side, in 2025 the network expands again with more monitored stations across the region that respect the EQS standards.
+
+
+#### Recommendations for the WAMM Programme
+
+1. **Focus field checks on the western and south-western inland areas:** As a first step, the WAMM programme should focus its attention on the western part of "Wear & Tees" and the south-west of "Northumberland & Tyne", where acute and chronic exceedances cluster across all three years (@fig-acute-map and @fig-chronic-map).
+
+2. **Verify the stations by site identifier:** As proposed in the first future step of the Evaluation section, the WAMM programme should check the data tables using the unique site identifier of each station to verify whether the exact same sites that exceeded the chronic threshold in 2023 and 2024 became unmonitored for bioavailable lead ("No Data") in 2025. If the same station moved from above the threshold to below the threshold (in either acute or chronic risk), that would indicate a real improvement in water quality; conversely, if the check confirmed that high-risk stations simply became "No Data", it would prove that chronic monitoring was interrupted right where the lead risk was highest.
+
+3. **Consult the Environment Agency on network gaps:** If that check confirms that previously high-risk stations are no longer being sampled for bioavailable lead, the WAMM programme should ask the Environment Agency why chronic monitoring at those specific locations was stopped.
