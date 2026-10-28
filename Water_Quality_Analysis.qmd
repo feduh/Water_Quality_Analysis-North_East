@@ -153,12 +153,13 @@ As shown in @tbl-raw-subareas, the vast majority of all lead measurements in the
 #| label: tbl-lead-counts
 #| tbl-cap: "Number of lead measurements and monitored sites per year and lead form."
 
-lead_table |>
+lead_counts = lead_table |>
   group_by(year, lead_type) |>
   summarise(
     measurements = n(),
     sites = n_distinct(id),
     .groups = "drop")
+lead_counts
 ```
 
 - **Sites measuring only one form of lead**: Many more stations measure "Lead, Dissolved" than "Lead : BLM Bioavailable". Because of this, I must join the acute and chronic tables with a full_join() to avoid losing stations, and display a "No Data" category on the maps when one of the two measurements is missing.
@@ -393,3 +394,50 @@ ggplot() +
     strip.background = element_rect(fill = "#FFCA8A", colour = "black"),
     legend.key = element_blank())
 ```
+
+
+## Evaluation
+
+
+#### What the Maps Show
+
+Looking at the acute risk map (@fig-acute-map), in 2023 the burgundy `"Above EQS"` dots are strongly concentrated in the south-west and western inland area of the region, while the northern and eastern areas show mostly blue `"Below EQS"` dots. In 2024, there is a clear reduction in the number of burgundy dots, but there is also a strong reduction in the blue dots across the whole map, which reflects the drop in total monitored sites shown in @tbl-lead-counts. In 2025, there are even fewer burgundy dots in the south-west, while more blue dots appear spread out across the region.
+
+Looking at the chronic risk map (@fig-chronic-map), in 2023 the orange `"Above EQS"` dots are concentrated in the same western and south-western inland area as the burgundy dots in @fig-acute-map. In that same area, there are also many blue `"Below EQS"` dots and many grey `"No Data"` dots located very close to the orange ones. In 2024, there are fewer dots overall: many grey `"No Data"` dots remain, while there are very few blue dots and fewer orange dots. Visually, in 2025 the number of blue and grey dots appears to increase across the map, while the orange `"Above EQS"` dots continue to decrease and look slightly more scattered.
+
+
+#### Comparison with Success Criteria
+
+In the Business Understanding section, I stated that my analysis would be successful if it helped the WAMM programme understand in which areas it should intervene, and how the site network changes between 2023 and 2025:
+
+- **Understanding where to intervene (partially achieved):** This goal is partially achieved. Just by looking at @fig-acute-map and @fig-chronic-map, it is intuitive to see that both acute and chronic exceedances cluster in the south-western inland area. However, the maps only give a general orientation of the critical area rather than complete certainty: the boundary between the `"NORTHUMBERLAND & TYNE"` and `"WEAR & TEES"` sub-areas is not drawn on the base map, and to plan a concrete intervention the WAMM programme still needs to look up the individual station IDs and exact concentration values in the dataset.
+
+- **Understanding how the site network changes (achieved):** This goal is achieved by combining the visual patterns on the maps with the counts in @tbl-lead-counts. From 2023 to 2024, the monitoring network shrinks sharply (dissolved lead stations drop from `r lead_counts |> filter(year == 2023, lead_type == "Lead, Dissolved") |> pull(sites)` to `r lead_counts |> filter(year == 2024, lead_type == "Lead, Dissolved") |> pull(sites)`, and bioavailable lead stations drop from `r lead_counts |> filter(year == 2023, lead_type == "Lead : BLM Bioavailable") |> pull(sites)` to `r lead_counts |> filter(year == 2024, lead_type == "Lead : BLM Bioavailable") |> pull(sites)`), and then expands again in 2025 (`r lead_counts |> filter(year == 2025, lead_type == "Lead, Dissolved") |> pull(sites)` dissolved and `r lead_counts |> filter(year == 2025, lead_type == "Lead : BLM Bioavailable") |> pull(sites)` bioavailable sites) with new blue dots spread across the region. Between 2024 and 2025, there is a visual pattern where some locations in the south-west appear to change from burgundy to blue in @fig-acute-map, or from orange to blue or grey in @fig-chronic-map. However, by visual inspection alone I cannot be sure whether it is the exact same station changing status or a nearby station being sampled instead. Furthermore, where an orange dot is replaced by a blue dot it could indicate an improvement, whereas where an orange dot is replaced by a grey `"No Data"` dot it only means that bioavailable lead was no longer measured there, which is not an environmental improvement.
+
+
+#### Reliability and Limitations
+
+The reliability of my conclusions is affected by the data, methodological, and visual limitations identified throughout the report:
+
+- **Changing monitoring network (@tbl-lead-counts) and `"No Data"` in high-risk areas:** Because the sampled stations change across the years, a lower number of `"Above EQS"` dots in 2024 and 2025 cannot be read simply as cleaner river water. In particular, in @fig-chronic-map many stations in the critical south-western area appear to become grey (`"No Data"`) across the years, making the chronic risk picture incomplete right where the risk was highest in 2023.
+
+- **Unequal sampling frequency (@tbl-assumptions-check):** As verified in @tbl-assumptions-check, some stations are sampled up to `r max(acute_risk_table$n_lead_dissolved)` times a year while `r sum(acute_risk_table$n_lead_dissolved == 1)` dissolved site-years and `r sum(chronic_risk_table$n_lead_bioavailable == 1)` bioavailable site-years have only a single sample. Sites sampled only once are less likely to capture an acute peak and have a less reliable annual mean.
+
+- **Excluded `"UNKNOWN-NORTH EAST AREA"` sites (Data Understanding):** Excluding the `r unknown_diss_stats$unknown_measurements` river dissolved lead measurements across `r unknown_diss_stats$unknown_sites` unlabelled sites means that if any of those stations are physically located in the study area and exceed the threshold, they are missing from my maps.
+
+- **Visual overlap between blue and grey dots:** Even with transparency (`alpha = 0.7`) and `arrange(status)` (which successfully keeps `"Above EQS"` dots on top), in areas where many stations are close together it remains difficult to visually distinguish `"Below EQS"` blue dots from `"No Data"` grey dots.
+
+- **Scope limitations (Business Understanding):** My analysis is purely visual: it does not explore the causes of lead pollution, does not display the exact numeric concentrations on the maps, and does not draw the border between the two sub-areas on the base map.
+
+
+#### Future Directions and Next Steps
+
+If I had more time to iterate on this project, I would take four steps to overcome these limitations:
+
+1. **Restrict the temporal comparison to sites monitored in all three years:** I would filter `risk_table` to keep only the `id` values present in 2023, 2024, and 2025, and track each station by `id` to verify whether specific sites truly changed from `"Above EQS"` to `"Below EQS"` over time.
+
+2. **Calculate exceedance proportions by year and sub-area:** I would create a summary table computing the percentage of `"Above EQS"` sites out of the monitored sites in each year and `sub_area`, so that the comparison across years is not distorted by the changing total number of stations.
+
+3. **Display the two sub-areas on the maps:** I would use the `sub_area` variable (for example with different point shapes or catchment polygons) to make the distinction between `"NORTHUMBERLAND & TYNE"` and `"WEAR & TEES"` directly visible on the maps.
+
+4. **Identify the specific top-exceedance stations for WAMM:** I would extract a table of the individual station `id`s that exceeded both the acute and chronic thresholds across multiple years, providing the WAMM programme with a concrete list of priority locations for field intervention.
