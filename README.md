@@ -1,6 +1,6 @@
 # Visual Exploration of River Lead Concentrations in North East England (2023–2025)
 
-**Author:** Federica Gaglianone (SN: 260405733)
+**Author:** Federica Gaglianone
 
 ## Project Overview
 
