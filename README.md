@@ -1,4 +1,4 @@
-# Visual Exploration of River Lead Concentrations in North East England (2023–2025)
+# Visual Exploration: how does the spatial and temporal distribution of river lead concentrations, evaluated against acute and chronic EQS thresholds, vary in the ‘Northumberland & Tyne’ and ‘Wear & Tees’ sub-areas between 2023 and 2025?
 
 **Author:** Federica Gaglianone
 
